@@ -7,11 +7,16 @@ import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
 import jakarta.persistence.Table;
 import jakarta.persistence.Transient;
+import lombok.AccessLevel;
+import lombok.Getter;
+import lombok.NoArgsConstructor;
 
 import java.time.LocalDateTime;
 
 @Entity
 @Table(name = "voting_sessions")
+@Getter
+@NoArgsConstructor(access = AccessLevel.PROTECTED)
 public class VotingSession {
 
 	private static final int DEFAULT_DURATION_MINUTES = 1;
@@ -29,13 +34,11 @@ public class VotingSession {
 	@Column(name = "duration_minutes", nullable = false)
 	private Integer durationMinutes;
 
-	protected VotingSession() {
-	}
-
+	// Hand-written, not @AllArgsConstructor: RN03's default-duration fallback
+	// is behavior Lombok's generated constructors cannot express.
 	public VotingSession(Long agendaId, LocalDateTime openedAt, Integer durationMinutes) {
 		this.agendaId = agendaId;
 		this.openedAt = openedAt;
-		// RN03: default duration is 1 minute when none is informed at opening.
 		this.durationMinutes = durationMinutes != null ? durationMinutes : DEFAULT_DURATION_MINUTES;
 	}
 
@@ -48,21 +51,5 @@ public class VotingSession {
 
 	public boolean isOpen(LocalDateTime now) {
 		return !now.isBefore(openedAt) && now.isBefore(getClosesAt());
-	}
-
-	public Long getId() {
-		return id;
-	}
-
-	public Long getAgendaId() {
-		return agendaId;
-	}
-
-	public LocalDateTime getOpenedAt() {
-		return openedAt;
-	}
-
-	public Integer getDurationMinutes() {
-		return durationMinutes;
 	}
 }

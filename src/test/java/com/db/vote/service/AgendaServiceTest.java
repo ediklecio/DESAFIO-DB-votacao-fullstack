@@ -4,6 +4,10 @@ import com.db.vote.api.dto.request.CreateAgendaRequest;
 import com.db.vote.domain.Agenda;
 import com.db.vote.domain.exception.InvalidAgendaException;
 import com.db.vote.repository.AgendaRepository;
+import jakarta.validation.Validation;
+import jakarta.validation.Validator;
+import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
@@ -24,16 +28,28 @@ import static org.mockito.Mockito.when;
 
 /**
  * Unit tests for {@link AgendaService#createAgenda(CreateAgendaRequest)} (RF01 - Cadastrar pauta).
- * Written TDD-first: {@code AgendaRepository}, {@code AgendaService} and
- * {@code CreateAgendaRequest} do not exist yet.
+ * The mandatory-title rule (RN via {@code @NotBlank} on {@link CreateAgendaRequest}) is checked
+ * with a real {@link Validator}, not a mock, so the tests exercise the actual constraint.
  */
 @ExtendWith(MockitoExtension.class)
 class AgendaServiceTest {
+
+	private static Validator validator;
 
 	@Mock
 	private AgendaRepository agendaRepository;
 
 	private AgendaService agendaService;
+
+	@BeforeAll
+	static void setUpValidator() {
+		validator = Validation.buildDefaultValidatorFactory().getValidator();
+	}
+
+	@BeforeEach
+	void setUp() {
+		agendaService = new AgendaService(agendaRepository, validator);
+	}
 
 	@Nested
 	@DisplayName("When the request is valid")
@@ -42,7 +58,6 @@ class AgendaServiceTest {
 		@Test
 		@DisplayName("should persist an agenda with the given title and description")
 		void shouldPersistAgendaWithTitleAndDescription() {
-			agendaService = new AgendaService(agendaRepository);
 			var request = new CreateAgendaRequest("Reforma do estatuto", "Votação sobre a nova redação do estatuto social");
 			var persistedAgenda = new Agenda(1L, request.title(), request.description());
 			when(agendaRepository.save(any(Agenda.class))).thenReturn(persistedAgenda);
@@ -66,7 +81,6 @@ class AgendaServiceTest {
 		@ValueSource(strings = {" ", "\t"})
 		@DisplayName("should accept a null, empty or blank description, since only the title is mandatory")
 		void shouldAcceptMissingDescription(String description) {
-			agendaService = new AgendaService(agendaRepository);
 			var request = new CreateAgendaRequest("Eleição da diretoria", description);
 			when(agendaRepository.save(any(Agenda.class))).thenReturn(new Agenda(2L, request.title(), description));
 
@@ -87,7 +101,6 @@ class AgendaServiceTest {
 		@ValueSource(strings = {" ", "\t", "\n"})
 		@DisplayName("should reject an agenda with a null, empty or blank title")
 		void shouldRejectMissingTitle(String title) {
-			agendaService = new AgendaService(agendaRepository);
 			var request = new CreateAgendaRequest(title, "Descrição qualquer");
 
 			assertThatThrownBy(() -> agendaService.createAgenda(request))
@@ -103,7 +116,6 @@ class AgendaServiceTest {
 		@Test
 		@DisplayName("should propagate the repository exception instead of swallowing it")
 		void shouldPropagateRepositoryException() {
-			agendaService = new AgendaService(agendaRepository);
 			var request = new CreateAgendaRequest("Reforma do estatuto", "Descrição válida");
 			when(agendaRepository.save(any(Agenda.class))).thenThrow(new RuntimeException("database unavailable"));
 

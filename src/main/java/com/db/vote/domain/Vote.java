@@ -9,6 +9,10 @@ import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
 import jakarta.persistence.Table;
 import jakarta.persistence.UniqueConstraint;
+import lombok.AccessLevel;
+import lombok.AllArgsConstructor;
+import lombok.Getter;
+import lombok.NoArgsConstructor;
 
 import java.time.LocalDateTime;
 
@@ -20,6 +24,9 @@ import java.time.LocalDateTime;
 		// a duplicate under concurrent requests.
 		uniqueConstraints = @UniqueConstraint(name = "uk_votes_agenda_member", columnNames = {"agenda_id", "member_id"})
 )
+@Getter
+@NoArgsConstructor(access = AccessLevel.PROTECTED)
+@AllArgsConstructor
 public class Vote {
 
 	@Id
@@ -38,34 +45,4 @@ public class Vote {
 
 	@Column(name = "registered_at", nullable = false)
 	private LocalDateTime registeredAt;
-
-	protected Vote() {
-	}
-
-	public Vote(Long agendaId, Long memberId, VoteOption voteAnswer, LocalDateTime registeredAt) {
-		this.agendaId = agendaId;
-		this.memberId = memberId;
-		this.voteAnswer = voteAnswer;
-		this.registeredAt = registeredAt;
-	}
-
-	public Long getId() {
-		return id;
-	}
-
-	public Long getAgendaId() {
-		return agendaId;
-	}
-
-	public Long getMemberId() {
-		return memberId;
-	}
-
-	public VoteOption getVoteAnswer() {
-		return voteAnswer;
-	}
-
-	public LocalDateTime getRegisteredAt() {
-		return registeredAt;
-	}
 }
