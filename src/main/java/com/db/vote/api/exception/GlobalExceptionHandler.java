@@ -2,8 +2,10 @@ package com.db.vote.api.exception;
 
 import com.db.vote.api.dto.response.ErrorResponse;
 import com.db.vote.domain.exception.AgendaNotFoundException;
+import com.db.vote.domain.exception.DuplicateVoteException;
 import com.db.vote.domain.exception.InvalidAgendaException;
 import com.db.vote.domain.exception.VotingSessionAlreadyExistsException;
+import com.db.vote.domain.exception.VotingSessionClosedException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.http.HttpStatus;
@@ -31,6 +33,18 @@ public class GlobalExceptionHandler {
 	@ExceptionHandler(VotingSessionAlreadyExistsException.class)
 	public ResponseEntity<ErrorResponse> handleVotingSessionAlreadyExists(VotingSessionAlreadyExistsException exception) {
 		log.warn("Voting session conflict: {}", exception.getMessage());
+		return ResponseEntity.status(HttpStatus.CONFLICT).body(new ErrorResponse(exception.getMessage()));
+	}
+
+	@ExceptionHandler(VotingSessionClosedException.class)
+	public ResponseEntity<ErrorResponse> handleVotingSessionClosed(VotingSessionClosedException exception) {
+		log.warn("Rejected vote on closed session: {}", exception.getMessage());
+		return ResponseEntity.unprocessableEntity().body(new ErrorResponse(exception.getMessage()));
+	}
+
+	@ExceptionHandler(DuplicateVoteException.class)
+	public ResponseEntity<ErrorResponse> handleDuplicateVote(DuplicateVoteException exception) {
+		log.warn("Rejected duplicate vote: {}", exception.getMessage());
 		return ResponseEntity.status(HttpStatus.CONFLICT).body(new ErrorResponse(exception.getMessage()));
 	}
 }
