@@ -25,7 +25,9 @@ public class VotingSession {
 	@GeneratedValue(strategy = GenerationType.IDENTITY)
 	private Long id;
 
-	@Column(name = "agenda_id", nullable = false)
+	// unique = true: an agenda has at most one voting session
+	// (Agenda "1" --> "0..1" VotingSession), enforced at the database level.
+	@Column(name = "agenda_id", nullable = false, unique = true)
 	private Long agendaId;
 
 	@Column(name = "opened_at", nullable = false)
