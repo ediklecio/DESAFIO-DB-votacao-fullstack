@@ -11,7 +11,7 @@ Convenção de status: `FAZER` (não iniciado) / `FAZENDO` (em andamento) / `FEI
 ## P0 — Fluxo núcleo de votação (bloqueia a entrega do desafio)
 
 1. **[FEITO]** RF01 — Domínio + `AgendaService` (validação via Bean Validation, persistência) — *feito nesta sessão*
-2. **[FAZER]** RF01 — Fechar ponta a ponta: `AgendaController` (`POST /api/v1/agendas`), `AgendaResponse`, `AgendaNotFoundException` onde fizer sentido, e o primeiro `GlobalExceptionHandler` (mapeando `InvalidAgendaException` → 422). *Tamanho: S. Depende de: item 1.*
+2. **[FEITO]** RF01 — Fechar ponta a ponta: `AgendaController` (`POST /api/v1/agendas`), `AgendaResponse`, e o primeiro `GlobalExceptionHandler` (mapeando `InvalidAgendaException` → 422). *Tamanho: S. Depende de: item 1.*
 3. **[FAZER]** RF02 — Abrir sessão de votação: `VotingSessionRepository`, `VotingSessionService.openSession` (RN02/RN03/RN05 já modelados em `VotingSession`), `VotingSessionController` (`POST /api/v1/agendas/{id}/sessions`), `VotingSessionResponse`. *Tamanho: M. Depende de: item 2 (precisa de `AgendaRepository`/`AgendaNotFoundException`).*
 4. **[FAZER]** RF03 + RF04 — Registrar voto: `VoteRepository`, `VoteService.registerVote` (usa `VotingSessionService.isSessionOpen` para RN04, captura violação da constraint `UNIQUE` de `Vote` e relança `DuplicateVoteException` para RN01), `VotingSessionClosedException`, `VoteController` (`POST /api/v1/agendas/{id}/votes`). Atualizar `GlobalExceptionHandler` com os novos mapeamentos (409 duplicidade, 422/400 sessão fechada). *Tamanho: M. Depende de: item 3.*
 5. **[FAZER]** RF05 — Apurar resultado: `VotingResultService.getResult` (contagem SIM/NAO + flag de sessão encerrada, RN06), endpoint `GET /api/v1/agendas/{id}/results`. *Tamanho: S. Depende de: item 4.*
