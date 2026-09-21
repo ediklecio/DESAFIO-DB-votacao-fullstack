@@ -1,12 +1,14 @@
 package com.db.vote.api.controller;
 
 import com.db.vote.api.dto.request.RegisterVoteRequest;
+import com.db.vote.api.dto.response.VotingResultResponse;
 import com.db.vote.domain.Vote;
 import com.db.vote.domain.VoteOption;
 import com.db.vote.domain.exception.AgendaNotFoundException;
 import com.db.vote.domain.exception.DuplicateVoteException;
 import com.db.vote.domain.exception.VotingSessionClosedException;
 import com.db.vote.service.VoteService;
+import com.db.vote.service.VotingResultService;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.webmvc.test.autoconfigure.WebMvcTest;
@@ -20,6 +22,7 @@ import java.time.LocalDateTime;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.when;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
@@ -35,6 +38,9 @@ class VoteControllerTest {
 
 	@MockitoBean
 	private VoteService voteService;
+
+	@MockitoBean
+	private VotingResultService votingResultService;
 
 	@Test
 	void shouldReturn201WhenVoteIsRegistered() throws Exception {
@@ -81,5 +87,24 @@ class VoteControllerTest {
 						.contentType(MediaType.APPLICATION_JSON)
 						.content(objectMapper.writeValueAsString(new RegisterVoteRequest(42L, VoteOption.YES))))
 				.andExpect(status().isConflict());
+	}
+
+	@Test
+	void shouldReturn200WithTheVotingResult() throws Exception {
+		when(votingResultService.getResult(1L)).thenReturn(new VotingResultResponse(1L, 7, 3, false));
+
+		mockMvc.perform(get("/api/v1/agendas/1/results"))
+				.andExpect(status().isOk())
+				.andExpect(jsonPath("$.totalYes").value(7))
+				.andExpect(jsonPath("$.totalNo").value(3))
+				.andExpect(jsonPath("$.sessionClosed").value(false));
+	}
+
+	@Test
+	void shouldReturn404WhenQueryingResultOfAnUnknownAgenda() throws Exception {
+		when(votingResultService.getResult(1L)).thenThrow(new AgendaNotFoundException("Agenda 1 not found"));
+
+		mockMvc.perform(get("/api/v1/agendas/1/results"))
+				.andExpect(status().isNotFound());
 	}
 }
