@@ -37,12 +37,15 @@ class VotingFlowIntegrationTest {
 	@Autowired
 	private ObjectMapper objectMapper;
 
+	private static final String ABLE_CPF_1 = "11111111110";
+	private static final String ABLE_CPF_2 = "22222222220";
+
 	@Test
 	void shouldRunTheFullVotingFlowAndEnforceItsBusinessRules() throws Exception {
 		Long agendaId = createAgenda("Reforma do estatuto", "Votação sobre a nova redação");
 
 		// RN04: no session yet -> voting is rejected.
-		voteAndExpect(agendaId, 1L, VoteOption.YES, status().isUnprocessableEntity());
+		voteAndExpect(agendaId, 1L, ABLE_CPF_1, VoteOption.YES, status().isUnprocessableEntity());
 
 		// RN06: querying results before any session exists is allowed and reports a closed/zero state.
 		mockMvc.perform(get("/api/v1/agendas/{id}/results", agendaId))
@@ -57,11 +60,11 @@ class VotingFlowIntegrationTest {
 		mockMvc.perform(post("/api/v1/agendas/{id}/sessions", agendaId))
 				.andExpect(status().isConflict());
 
-		voteAndExpect(agendaId, 1L, VoteOption.YES, status().isCreated());
-		voteAndExpect(agendaId, 2L, VoteOption.NO, status().isCreated());
+		voteAndExpect(agendaId, 1L, ABLE_CPF_1, VoteOption.YES, status().isCreated());
+		voteAndExpect(agendaId, 2L, ABLE_CPF_2, VoteOption.NO, status().isCreated());
 
 		// RN01: the same member cannot vote twice - rejected end to end against the real unique constraint.
-		voteAndExpect(agendaId, 1L, VoteOption.NO, status().isConflict());
+		voteAndExpect(agendaId, 1L, ABLE_CPF_1, VoteOption.NO, status().isConflict());
 
 		mockMvc.perform(get("/api/v1/agendas/{id}/results", agendaId))
 				.andExpect(status().isOk())
@@ -69,6 +72,18 @@ class VotingFlowIntegrationTest {
 				.andExpect(jsonPath("$.totalYes").value(1))
 				.andExpect(jsonPath("$.totalNo").value(1))
 				.andExpect(jsonPath("$.sessionClosed").value(false));
+	}
+
+	@Test
+	void shouldRejectInvalidOrIneligibleCpfBeforeRegisteringTheVote() throws Exception {
+		Long agendaId = createAgenda("Prestação de contas", "Aprovação das contas do exercício anterior");
+		openSession(agendaId, 1);
+
+		// RF06: not an 11-digit CPF -> the fake client reports it as invalid (404).
+		voteAndExpect(agendaId, 1L, "not-a-cpf", VoteOption.YES, status().isNotFound());
+
+		// RN07: valid format but UNABLE_TO_VOTE per the fake client's rule -> 422, never silently discarded.
+		voteAndExpect(agendaId, 2L, "11111111111", VoteOption.YES, status().isUnprocessableEntity());
 	}
 
 	@Test
@@ -86,7 +101,7 @@ class VotingFlowIntegrationTest {
 		mockMvc.perform(post("/api/v1/agendas/{id}/sessions", unknownAgendaId))
 				.andExpect(status().isNotFound());
 
-		voteAndExpect(unknownAgendaId, 1L, VoteOption.YES, status().isNotFound());
+		voteAndExpect(unknownAgendaId, 1L, ABLE_CPF_1, VoteOption.YES, status().isNotFound());
 
 		mockMvc.perform(get("/api/v1/agendas/{id}/results", unknownAgendaId))
 				.andExpect(status().isNotFound());
@@ -109,11 +124,11 @@ class VotingFlowIntegrationTest {
 				.andExpect(status().isCreated());
 	}
 
-	private void voteAndExpect(Long agendaId, Long memberId, VoteOption answer,
+	private void voteAndExpect(Long agendaId, Long memberId, String cpf, VoteOption answer,
 			org.springframework.test.web.servlet.ResultMatcher expectedStatus) throws Exception {
 		mockMvc.perform(post("/api/v1/agendas/{id}/votes", agendaId)
 						.contentType(MediaType.APPLICATION_JSON)
-						.content(objectMapper.writeValueAsString(new RegisterVoteRequest(memberId, answer))))
+						.content(objectMapper.writeValueAsString(new RegisterVoteRequest(memberId, cpf, answer))))
 				.andExpect(expectedStatus);
 	}
 }

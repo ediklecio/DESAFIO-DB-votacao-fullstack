@@ -5,7 +5,12 @@ import com.db.vote.domain.Vote;
 import com.db.vote.domain.VoteOption;
 import com.db.vote.domain.exception.AgendaNotFoundException;
 import com.db.vote.domain.exception.DuplicateVoteException;
+import com.db.vote.domain.exception.InvalidCpfException;
+import com.db.vote.domain.exception.UnableToVoteException;
 import com.db.vote.domain.exception.VotingSessionClosedException;
+import com.db.vote.infra.client.CpfValidationClient;
+import com.db.vote.infra.client.VotingAbilityResponse;
+import com.db.vote.infra.client.VotingAbilityStatus;
 import com.db.vote.repository.AgendaRepository;
 import com.db.vote.repository.VoteRepository;
 import org.junit.jupiter.api.BeforeEach;
@@ -32,6 +37,8 @@ class VoteServiceTest {
 
 	private static final Long AGENDA_ID = 1L;
 	private static final Long MEMBER_ID = 42L;
+	private static final String ABLE_CPF = "11111111110";
+	private static final String UNABLE_CPF = "11111111111";
 
 	@Mock
 	private VoteRepository voteRepository;
@@ -42,11 +49,14 @@ class VoteServiceTest {
 	@Mock
 	private AgendaRepository agendaRepository;
 
+	@Mock
+	private CpfValidationClient cpfValidationClient;
+
 	private VoteService voteService;
 
 	@BeforeEach
 	void setUp() {
-		voteService = new VoteService(voteRepository, votingSessionService, agendaRepository);
+		voteService = new VoteService(voteRepository, votingSessionService, agendaRepository, cpfValidationClient);
 	}
 
 	@Nested
@@ -54,14 +64,15 @@ class VoteServiceTest {
 	class WhenRegisteringAVote {
 
 		@Test
-		@DisplayName("should persist the vote when the session is open and the member has not voted yet")
+		@DisplayName("should persist the vote when the CPF is able to vote, the session is open and the member has not voted yet")
 		void shouldRegisterVote() {
 			when(agendaRepository.findById(AGENDA_ID)).thenReturn(Optional.of(new Agenda(AGENDA_ID, "Reforma do estatuto", null)));
+			when(cpfValidationClient.checkVotingAbility(ABLE_CPF)).thenReturn(new VotingAbilityResponse(VotingAbilityStatus.ABLE_TO_VOTE));
 			when(votingSessionService.isSessionOpen(AGENDA_ID)).thenReturn(true);
 			when(voteRepository.existsByAgendaIdAndMemberId(AGENDA_ID, MEMBER_ID)).thenReturn(false);
 			when(voteRepository.save(any(Vote.class))).thenAnswer(invocation -> invocation.getArgument(0));
 
-			Vote result = voteService.registerVote(AGENDA_ID, MEMBER_ID, VoteOption.YES);
+			Vote result = voteService.registerVote(AGENDA_ID, MEMBER_ID, ABLE_CPF, VoteOption.YES);
 
 			ArgumentCaptor<Vote> captor = ArgumentCaptor.forClass(Vote.class);
 			verify(voteRepository).save(captor.capture());
@@ -76,8 +87,30 @@ class VoteServiceTest {
 		void shouldThrowWhenAgendaDoesNotExist() {
 			when(agendaRepository.findById(AGENDA_ID)).thenReturn(Optional.empty());
 
-			assertThatThrownBy(() -> voteService.registerVote(AGENDA_ID, MEMBER_ID, VoteOption.YES))
+			assertThatThrownBy(() -> voteService.registerVote(AGENDA_ID, MEMBER_ID, ABLE_CPF, VoteOption.YES))
 					.isInstanceOf(AgendaNotFoundException.class);
+			verify(voteRepository, never()).save(any());
+		}
+
+		@Test
+		@DisplayName("should propagate InvalidCpfException from the CPF client (RF06/RN07)")
+		void shouldPropagateInvalidCpf() {
+			when(agendaRepository.findById(AGENDA_ID)).thenReturn(Optional.of(new Agenda(AGENDA_ID, "Reforma do estatuto", null)));
+			when(cpfValidationClient.checkVotingAbility("invalid")).thenThrow(new InvalidCpfException("CPF invalid is not a valid CPF"));
+
+			assertThatThrownBy(() -> voteService.registerVote(AGENDA_ID, MEMBER_ID, "invalid", VoteOption.YES))
+					.isInstanceOf(InvalidCpfException.class);
+			verify(voteRepository, never()).save(any());
+		}
+
+		@Test
+		@DisplayName("should throw UnableToVoteException when the CPF client reports UNABLE_TO_VOTE (RN07)")
+		void shouldThrowWhenCpfIsUnableToVote() {
+			when(agendaRepository.findById(AGENDA_ID)).thenReturn(Optional.of(new Agenda(AGENDA_ID, "Reforma do estatuto", null)));
+			when(cpfValidationClient.checkVotingAbility(UNABLE_CPF)).thenReturn(new VotingAbilityResponse(VotingAbilityStatus.UNABLE_TO_VOTE));
+
+			assertThatThrownBy(() -> voteService.registerVote(AGENDA_ID, MEMBER_ID, UNABLE_CPF, VoteOption.YES))
+					.isInstanceOf(UnableToVoteException.class);
 			verify(voteRepository, never()).save(any());
 		}
 
@@ -85,9 +118,10 @@ class VoteServiceTest {
 		@DisplayName("should throw VotingSessionClosedException when there is no open session (RN02/RN04)")
 		void shouldThrowWhenSessionIsNotOpen() {
 			when(agendaRepository.findById(AGENDA_ID)).thenReturn(Optional.of(new Agenda(AGENDA_ID, "Reforma do estatuto", null)));
+			when(cpfValidationClient.checkVotingAbility(ABLE_CPF)).thenReturn(new VotingAbilityResponse(VotingAbilityStatus.ABLE_TO_VOTE));
 			when(votingSessionService.isSessionOpen(AGENDA_ID)).thenReturn(false);
 
-			assertThatThrownBy(() -> voteService.registerVote(AGENDA_ID, MEMBER_ID, VoteOption.YES))
+			assertThatThrownBy(() -> voteService.registerVote(AGENDA_ID, MEMBER_ID, ABLE_CPF, VoteOption.YES))
 					.isInstanceOf(VotingSessionClosedException.class);
 			verify(voteRepository, never()).save(any());
 		}
@@ -96,10 +130,11 @@ class VoteServiceTest {
 		@DisplayName("should throw DuplicateVoteException when the member already voted (fast path, RN01)")
 		void shouldThrowWhenMemberAlreadyVoted() {
 			when(agendaRepository.findById(AGENDA_ID)).thenReturn(Optional.of(new Agenda(AGENDA_ID, "Reforma do estatuto", null)));
+			when(cpfValidationClient.checkVotingAbility(ABLE_CPF)).thenReturn(new VotingAbilityResponse(VotingAbilityStatus.ABLE_TO_VOTE));
 			when(votingSessionService.isSessionOpen(AGENDA_ID)).thenReturn(true);
 			when(voteRepository.existsByAgendaIdAndMemberId(AGENDA_ID, MEMBER_ID)).thenReturn(true);
 
-			assertThatThrownBy(() -> voteService.registerVote(AGENDA_ID, MEMBER_ID, VoteOption.YES))
+			assertThatThrownBy(() -> voteService.registerVote(AGENDA_ID, MEMBER_ID, ABLE_CPF, VoteOption.YES))
 					.isInstanceOf(DuplicateVoteException.class);
 			verify(voteRepository, never()).save(any());
 		}
@@ -108,11 +143,12 @@ class VoteServiceTest {
 		@DisplayName("should throw DuplicateVoteException when the unique constraint rejects a concurrent duplicate (RN01)")
 		void shouldThrowWhenDatabaseConstraintIsViolated() {
 			when(agendaRepository.findById(AGENDA_ID)).thenReturn(Optional.of(new Agenda(AGENDA_ID, "Reforma do estatuto", null)));
+			when(cpfValidationClient.checkVotingAbility(ABLE_CPF)).thenReturn(new VotingAbilityResponse(VotingAbilityStatus.ABLE_TO_VOTE));
 			when(votingSessionService.isSessionOpen(AGENDA_ID)).thenReturn(true);
 			when(voteRepository.existsByAgendaIdAndMemberId(AGENDA_ID, MEMBER_ID)).thenReturn(false);
 			when(voteRepository.save(any(Vote.class))).thenThrow(new DataIntegrityViolationException("uk_votes_agenda_member"));
 
-			assertThatThrownBy(() -> voteService.registerVote(AGENDA_ID, MEMBER_ID, VoteOption.YES))
+			assertThatThrownBy(() -> voteService.registerVote(AGENDA_ID, MEMBER_ID, ABLE_CPF, VoteOption.YES))
 					.isInstanceOf(DuplicateVoteException.class);
 		}
 	}

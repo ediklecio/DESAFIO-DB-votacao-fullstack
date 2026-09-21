@@ -26,7 +26,7 @@ public class VoteController {
 
 	@PostMapping("/api/v1/agendas/{agendaId}/votes")
 	public ResponseEntity<VoteResponse> vote(@PathVariable Long agendaId, @RequestBody RegisterVoteRequest request) {
-		Vote vote = voteService.registerVote(agendaId, request.memberId(), request.voteAnswer());
+		Vote vote = voteService.registerVote(agendaId, request.memberId(), request.cpf(), request.voteAnswer());
 		return ResponseEntity.status(HttpStatus.CREATED).body(VoteResponse.from(vote));
 	}
 

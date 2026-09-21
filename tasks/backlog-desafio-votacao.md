@@ -30,7 +30,7 @@ Convenção de status: `FAZER` (não iniciado) / `FAZENDO` (em andamento) / `FEI
 
 ## P3 — Bônus (avaliados à parte, conforme o próprio enunciado)
 
-12. **[FAZER]** RF06 + RN07 — Client fake de validação de CPF (`CpfValidationClient`/`FakeCpfValidationClientAdapter`), integrado ao `VoteService` (404 CPF inválido, rejeição se `UNABLE_TO_VOTE`). *Tamanho: S. Depende de: item 4.*
+12. **[FEITO]** RF06 + RN07 — `CpfValidationClient`/`FakeCpfValidationClientAdapter` em `infra/client` (fake local, sem chamada HTTP real — o diagrama já mostrava a classe sem dependência de HTTP), integrado ao `VoteService.registerVote` (agora recebe `cpf`). **Regra do fake, documentada e arbitrária** (não há CPF real por trás): CPF precisa ter 11 dígitos (senão `InvalidCpfException` → 404); dígito final par → `ABLE_TO_VOTE`, ímpar → `UNABLE_TO_VOTE` (`UnableToVoteException` → 422). `RegisterVoteRequest` ganhou o campo `cpf`. *Tamanho: S. Depende de: item 4.*
 13. **[FAZER]** RNF02 (bônus 2) — Testes de performance com centenas de milhares de votos, validando índice/constraint sem N+1. *Tamanho: L. Depende de: itens 6, 9.*
 
 **Nota sobre RF07 (versionamento de API):** apesar de listado como bônus no enunciado, RNF04 já fixa a decisão (`/api/v1/...`). Por ser praticamente gratuito, não entra como item separado — todo controller novo (itens 2, 3, 4, 5) já nasce sob `/api/v1` desde a criação, em vez de ser retrofitado depois.

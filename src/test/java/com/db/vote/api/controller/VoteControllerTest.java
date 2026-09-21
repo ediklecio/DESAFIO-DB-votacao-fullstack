@@ -6,6 +6,8 @@ import com.db.vote.domain.Vote;
 import com.db.vote.domain.VoteOption;
 import com.db.vote.domain.exception.AgendaNotFoundException;
 import com.db.vote.domain.exception.DuplicateVoteException;
+import com.db.vote.domain.exception.InvalidCpfException;
+import com.db.vote.domain.exception.UnableToVoteException;
 import com.db.vote.domain.exception.VotingSessionClosedException;
 import com.db.vote.service.VoteService;
 import com.db.vote.service.VotingResultService;
@@ -44,9 +46,9 @@ class VoteControllerTest {
 
 	@Test
 	void shouldReturn201WhenVoteIsRegistered() throws Exception {
-		var request = new RegisterVoteRequest(42L, VoteOption.YES);
+		var request = new RegisterVoteRequest(42L, "11111111110", VoteOption.YES);
 		var vote = new Vote(1L, 1L, 42L, VoteOption.YES, LocalDateTime.now());
-		when(voteService.registerVote(eq(1L), eq(42L), eq(VoteOption.YES))).thenReturn(vote);
+		when(voteService.registerVote(eq(1L), eq(42L), eq("11111111110"), eq(VoteOption.YES))).thenReturn(vote);
 
 		mockMvc.perform(post("/api/v1/agendas/1/votes")
 						.contentType(MediaType.APPLICATION_JSON)
@@ -58,35 +60,57 @@ class VoteControllerTest {
 
 	@Test
 	void shouldReturn404WhenAgendaNotFound() throws Exception {
-		when(voteService.registerVote(any(), any(), any()))
+		when(voteService.registerVote(any(), any(), any(), any()))
 				.thenThrow(new AgendaNotFoundException("Agenda 1 not found"));
 
 		mockMvc.perform(post("/api/v1/agendas/1/votes")
 						.contentType(MediaType.APPLICATION_JSON)
-						.content(objectMapper.writeValueAsString(new RegisterVoteRequest(42L, VoteOption.YES))))
+						.content(objectMapper.writeValueAsString(new RegisterVoteRequest(42L, "11111111110", VoteOption.YES))))
 				.andExpect(status().isNotFound());
 	}
 
 	@Test
 	void shouldReturn422WhenSessionIsClosed() throws Exception {
-		when(voteService.registerVote(any(), any(), any()))
+		when(voteService.registerVote(any(), any(), any(), any()))
 				.thenThrow(new VotingSessionClosedException("Voting session for agenda 1 is not open"));
 
 		mockMvc.perform(post("/api/v1/agendas/1/votes")
 						.contentType(MediaType.APPLICATION_JSON)
-						.content(objectMapper.writeValueAsString(new RegisterVoteRequest(42L, VoteOption.YES))))
+						.content(objectMapper.writeValueAsString(new RegisterVoteRequest(42L, "11111111110", VoteOption.YES))))
 				.andExpect(status().isUnprocessableEntity());
 	}
 
 	@Test
 	void shouldReturn409WhenVoteIsDuplicate() throws Exception {
-		when(voteService.registerVote(any(), any(), any()))
+		when(voteService.registerVote(any(), any(), any(), any()))
 				.thenThrow(new DuplicateVoteException("Member 42 already voted on agenda 1"));
 
 		mockMvc.perform(post("/api/v1/agendas/1/votes")
 						.contentType(MediaType.APPLICATION_JSON)
-						.content(objectMapper.writeValueAsString(new RegisterVoteRequest(42L, VoteOption.YES))))
+						.content(objectMapper.writeValueAsString(new RegisterVoteRequest(42L, "11111111110", VoteOption.YES))))
 				.andExpect(status().isConflict());
+	}
+
+	@Test
+	void shouldReturn404WhenCpfIsInvalid() throws Exception {
+		when(voteService.registerVote(any(), any(), any(), any()))
+				.thenThrow(new InvalidCpfException("CPF invalid is not a valid CPF"));
+
+		mockMvc.perform(post("/api/v1/agendas/1/votes")
+						.contentType(MediaType.APPLICATION_JSON)
+						.content(objectMapper.writeValueAsString(new RegisterVoteRequest(42L, "invalid", VoteOption.YES))))
+				.andExpect(status().isNotFound());
+	}
+
+	@Test
+	void shouldReturn422WhenMemberIsUnableToVote() throws Exception {
+		when(voteService.registerVote(any(), any(), any(), any()))
+				.thenThrow(new UnableToVoteException("Member 42 is not able to vote"));
+
+		mockMvc.perform(post("/api/v1/agendas/1/votes")
+						.contentType(MediaType.APPLICATION_JSON)
+						.content(objectMapper.writeValueAsString(new RegisterVoteRequest(42L, "11111111111", VoteOption.YES))))
+				.andExpect(status().isUnprocessableEntity());
 	}
 
 	@Test
