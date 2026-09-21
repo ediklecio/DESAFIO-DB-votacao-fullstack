@@ -26,7 +26,7 @@ Convenção de status: `FAZER` (não iniciado) / `FAZENDO` (em andamento) / `FEI
 
 9. **[FEITO]** RNF05 — `VotingFlowIntegrationTest` (`@SpringBootTest` + `@AutoConfigureMockMvc`, H2 real via schema gerado por JPA) cobrindo pauta → sessão → voto → resultado, segunda sessão rejeitada (409), voto duplicado rejeitado pela constraint real (409), 404 em agenda inexistente, 422 em título em branco e em voto com sessão fechada. *Tamanho: M. Depende de: item 6.*
 10. **[FEITO]** RNF06 (parte 2) — `springdoc-openapi-starter-webmvc-ui:2.8.6` (Swagger UI em `/swagger-ui.html`, doc em `/v3/api-docs`), validado por `OpenApiDocsTest` (confirma os 3 paths expostos). Sem release oficialmente certificado ainda pra Spring Boot 4/Spring Framework 7, mas testado empiricamente e funcionando. *Tamanho: S. Depende de: itens 2–5 (endpoints existirem).*
-11. **[FAZER]** RNF07 — Front-end responsivo: telas mínimas de cadastrar pauta, abrir sessão, votar e ver resultado. *Tamanho: L. Depende de: itens 2–5 (API estável).*
+11. **[BLOQUEADO]** RNF07 — Front-end responsivo: telas mínimas de cadastrar pauta, abrir sessão, votar e ver resultado. — **Motivo do bloqueio:** nenhum documento do projeto (`docs/01`, `docs/02`, README) fixa o framework de front-end — não é uma decisão técnica que eu deva tomar sozinho (React? Angular? Vue? só HTML/JS simples?). Preciso que você decida antes de eu montar o projeto. *Tamanho: L. Depende de: itens 2–5 (API estável).*
 
 ## P3 — Bônus (avaliados à parte, conforme o próprio enunciado)
 
