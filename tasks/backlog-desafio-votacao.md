@@ -24,7 +24,7 @@ Convenção de status: `FAZER` (não iniciado) / `FAZENDO` (em andamento) / `FEI
 
 ## P2 — Qualidade e acabamento do MVP
 
-9. **[FAZER]** RNF05 — Testes de integração (`@SpringBootTest` / `@DataJpaTest`) cobrindo o fluxo pauta → sessão → voto → resultado, incluindo o caso de voto duplicado batendo na constraint real. *Tamanho: M. Depende de: item 6.*
+9. **[FEITO]** RNF05 — `VotingFlowIntegrationTest` (`@SpringBootTest` + `@AutoConfigureMockMvc`, H2 real via schema gerado por JPA) cobrindo pauta → sessão → voto → resultado, segunda sessão rejeitada (409), voto duplicado rejeitado pela constraint real (409), 404 em agenda inexistente, 422 em título em branco e em voto com sessão fechada. *Tamanho: M. Depende de: item 6.*
 10. **[FAZER]** RNF06 (parte 2) — Swagger/OpenAPI documentando os endpoints. *Tamanho: S. Depende de: itens 2–5 (endpoints existirem).*
 11. **[FAZER]** RNF07 — Front-end responsivo: telas mínimas de cadastrar pauta, abrir sessão, votar e ver resultado. *Tamanho: L. Depende de: itens 2–5 (API estável).*
 
