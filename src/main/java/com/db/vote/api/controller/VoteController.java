@@ -6,6 +6,7 @@ import com.db.vote.api.dto.response.VotingResultResponse;
 import com.db.vote.domain.Vote;
 import com.db.vote.service.VoteService;
 import com.db.vote.service.VotingResultService;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -19,6 +20,7 @@ import org.springframework.web.bind.annotation.RestController;
 // /results are siblings under the same agenda, not one nested under the other.
 @RestController
 @RequiredArgsConstructor
+@Tag(name = "Voto", description = "Registro de votos e apuração de resultados")
 public class VoteController {
 
 	private final VoteService voteService;

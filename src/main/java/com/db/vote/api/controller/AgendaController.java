@@ -4,6 +4,7 @@ import com.db.vote.api.dto.request.CreateAgendaRequest;
 import com.db.vote.api.dto.response.AgendaResponse;
 import com.db.vote.domain.Agenda;
 import com.db.vote.service.AgendaService;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -16,6 +17,7 @@ import java.net.URI;
 @RestController
 @RequestMapping("/api/v1/agendas")
 @RequiredArgsConstructor
+@Tag(name = "Pauta", description = "Criação e consulta de pautas de votação")
 public class AgendaController {
 
 	private final AgendaService agendaService;
