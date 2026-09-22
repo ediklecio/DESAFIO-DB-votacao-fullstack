@@ -29,8 +29,16 @@ endpoint.
 
 A UI é gerada automaticamente pelo springdoc a partir dos controllers e
 DTOs (`org.springdoc:springdoc-openapi-starter-webmvc-ui:2.8.6`,
-`pom.xml:94-98`) — não há configuração customizada de OpenAPI no
-projeto, então os grupos/paths seguem os defaults do springdoc.
+`pom.xml:94-98`). Os paths seguem os defaults do springdoc, mas os
+grupos (tags) foram renomeados via `@Tag` (`io.swagger.v3.oas.annotations.tags.Tag`)
+direto nos controllers, para exibir nomenclatura de negócio em vez do
+nome técnico da classe:
+
+| Controller | Tag exibida no Swagger UI |
+|---|---|
+| `AgendaController` | **Pauta** |
+| `VoteController` | **Voto** |
+| `VotingSessionController` | **Sessão** |
 
 ## 2. Mapa dos endpoints
 
