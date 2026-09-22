@@ -2,7 +2,7 @@
 
 **Projeto:** desafio-votacao-fullstack
 **Status:** MVP em desenvolvimento
-**Referência:** `README.md` (enunciado original)
+**Referência:** `docs/DESAFIO.md` (enunciado original)
 
 ## 1. Objetivo e contexto
 

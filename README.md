@@ -1,86 +1,28 @@
-# Votação
+# Sistema de Votação Cooperativista
 
-## Objetivo
+API REST em Java/Spring Boot para gerenciar pautas e sessões de votação em assembleias de cooperativa: cadastro de pauta, abertura de sessão de votação com duração configurável, registro de voto (Sim/Não) por associado e apuração do resultado — com persistência em PostgreSQL.
 
-No cooperativismo, cada associado possui um voto e as decisões são tomadas em assembleias, por votação. Imagine que você deve criar uma solução we para gerenciar e participar dessas sessões de votação.
-Essa solução deve ser executada na nuvem e promover as seguintes funcionalidades através de uma API REST / Front:
+## Início rápido (Docker)
 
-- Cadastrar uma nova pauta
-- Abrir uma sessão de votação em uma pauta (a sessão de votação deve ficar aberta por
-  um tempo determinado na chamada de abertura ou 1 minuto por default)
-- Receber votos dos associados em pautas (os votos são apenas 'Sim'/'Não'. Cada associado
-  é identificado por um id único e pode votar apenas uma vez por pauta)
-- Contabilizar os votos e dar o resultado da votação na pauta
+Pré-requisitos: Docker e Docker Compose instalados.
 
-Para fins de exercício, a segurança das interfaces pode ser abstraída e qualquer chamada para as interfaces pode ser considerada como autorizada. A solução deve ser construída em java com Spring-boot e Angular/React conforme orientação, mas os frameworks e bibliotecas são de livre escolha (desde que não infrinja direitos de uso).
-
-É importante que as pautas e os votos sejam persistidos e que não sejam perdidos com o restart da aplicação.
-
-## Como proceder
-
-Por favor, realize o FORK desse repositório e implemente sua solução no FORK em seu repositório GItHub, ao final, notifique da conclusão para que possamos analisar o código implementado.
-
-Lembre de deixar todas as orientações necessárias para executar o seu código.
-
-### Tarefas bônus
-
-- Tarefa Bônus 1 - Integração com sistemas externos
-  - Criar uma Facade/Client Fake que retorna aleátoriamente se um CPF recebido é válido ou não.
-  - Caso o CPF seja inválido, a API retornará o HTTP Status 404 (Not found). Você pode usar geradores de CPF para gerar CPFs válidos
-  - Caso o CPF seja válido, a API retornará se o usuário pode (ABLE_TO_VOTE) ou não pode (UNABLE_TO_VOTE) executar a operação. Essa operação retorna resultados aleatórios, portanto um mesmo CPF pode funcionar em um teste e não funcionar no outro.
-
-```
-// CPF Ok para votar
-{
-    "status": "ABLE_TO_VOTE
-}
-// CPF Nao Ok para votar - retornar 404 no client tb
-{
-    "status": "UNABLE_TO_VOTE
-}
+```bash
+cp .env.example .env      # defina DB_PASSWORD; não altere DB_HOST
+docker compose up --build
 ```
 
-Exemplos de retorno do serviço
+A API sobe em `http://localhost:8080` e o Swagger UI em `http://localhost:8080/swagger-ui.html`.
 
-### Tarefa Bônus 2 - Performance
+Para os demais perfis de execução — desenvolvimento local com hot-reload/debug na IDE e execução da suíte de testes automatizados — veja o guia completo em [`docs/INICIALIZACAO.md`](docs/INICIALIZACAO.md).
 
-- Imagine que sua aplicação possa ser usada em cenários que existam centenas de
-  milhares de votos. Ela deve se comportar de maneira performática nesses
-  cenários
-- Testes de performance são uma boa maneira de garantir e observar como sua
-  aplicação se comporta
+## Documentação
 
-### Tarefa Bônus 3 - Versionamento da API
+Toda a documentação do projeto — requisitos, arquitetura, guias de execução e de teste — está no diretório [`/docs`](docs).
 
-○ Como você versionaria a API da sua aplicação? Que estratégia usar?
-
-## O que será analisado
-
-- Simplicidade no design da solução (evitar over engineering)
-- Organização do código
-- Arquitetura do projeto
-- Boas práticas de programação (manutenibilidade, legibilidade etc)
-- Possíveis bugs
-- Tratamento de erros e exceções
-- Explicação breve do porquê das escolhas tomadas durante o desenvolvimento da solução
-- Uso de testes automatizados e ferramentas de qualidade
-- Limpeza do código
-- Documentação do código e da API
-- Logs da aplicação
-- Mensagens e organização dos commits
-- Testes
-- Layout responsivo
-
-## Dicas
-
-- Teste bem sua solução, evite bugs
-
-  Observações importantes
-- Não inicie o teste sem sanar todas as dúvidas
-- Iremos executar a aplicação para testá-la, cuide com qualquer dependência externa e
-  deixe claro caso haja instruções especiais para execução do mesmo
-  Classificação da informação: Uso Interno
-
-
-
-# desafio-votacao
+| Documento | Descrição |
+|---|---|
+| [`DESAFIO.md`](docs/DESAFIO.md) | Enunciado original do desafio: requisitos, tarefas bônus e critérios de avaliação |
+| [`01-documento-requisitos.md`](docs/01-documento-requisitos.md) | Requisitos funcionais, regras de negócio e requisitos não funcionais (RF/RN/RNF) |
+| [`02-diagrama-classes.md`](docs/02-diagrama-classes.md) | Diagrama de classes e organização em camadas (`api` / `domain` / `repository` / `service` / `infra`) |
+| [`03-guia-testes-swagger.md`](docs/03-guia-testes-swagger.md) | Passo a passo para testar a API pelo Swagger UI, incluindo cenários de erro |
+| [`INICIALIZACAO.md`](docs/INICIALIZACAO.md) | Guia de inicialização: Docker Compose, ambiente híbrido (dev local) e testes automatizados |
