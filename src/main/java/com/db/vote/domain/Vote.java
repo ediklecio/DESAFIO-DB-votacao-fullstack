@@ -19,10 +19,14 @@ import java.time.LocalDateTime;
 @Entity
 @Table(
 		name = "votes",
-		// RN01: a member votes at most once per agenda. Enforced here at the
-		// database level — a service-side "exists" check alone would still allow
-		// a duplicate under concurrent requests.
-		uniqueConstraints = @UniqueConstraint(name = "uk_votes_agenda_member", columnNames = {"agenda_id", "member_id"})
+		// RN01: a member votes at most once per agenda, and neither the member_id
+		// nor the cpf may be reused with a different counterpart for the same
+		// agenda. Enforced here at the database level — a service-side "exists"
+		// check alone would still allow a duplicate under concurrent requests.
+		uniqueConstraints = {
+				@UniqueConstraint(name = "uk_votes_agenda_member", columnNames = {"agenda_id", "member_id"}),
+				@UniqueConstraint(name = "uk_votes_agenda_cpf", columnNames = {"agenda_id", "cpf"})
+		}
 )
 @Getter
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
@@ -38,6 +42,9 @@ public class Vote {
 
 	@Column(name = "member_id", nullable = false)
 	private Long memberId;
+
+	@Column(name = "cpf", nullable = false, length = 11)
+	private String cpf;
 
 	@Enumerated(EnumType.STRING)
 	@Column(name = "vote_answer", nullable = false)

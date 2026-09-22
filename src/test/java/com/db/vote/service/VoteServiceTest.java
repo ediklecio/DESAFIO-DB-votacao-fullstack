@@ -70,6 +70,7 @@ class VoteServiceTest {
 			when(cpfValidationClient.checkVotingAbility(ABLE_CPF)).thenReturn(new VotingAbilityResponse(VotingAbilityStatus.ABLE_TO_VOTE));
 			when(votingSessionService.isSessionOpen(AGENDA_ID)).thenReturn(true);
 			when(voteRepository.existsByAgendaIdAndMemberId(AGENDA_ID, MEMBER_ID)).thenReturn(false);
+			when(voteRepository.existsByAgendaIdAndCpf(AGENDA_ID, ABLE_CPF)).thenReturn(false);
 			when(voteRepository.save(any(Vote.class))).thenAnswer(invocation -> invocation.getArgument(0));
 
 			Vote result = voteService.registerVote(AGENDA_ID, MEMBER_ID, ABLE_CPF, VoteOption.YES);
@@ -133,6 +134,20 @@ class VoteServiceTest {
 			when(cpfValidationClient.checkVotingAbility(ABLE_CPF)).thenReturn(new VotingAbilityResponse(VotingAbilityStatus.ABLE_TO_VOTE));
 			when(votingSessionService.isSessionOpen(AGENDA_ID)).thenReturn(true);
 			when(voteRepository.existsByAgendaIdAndMemberId(AGENDA_ID, MEMBER_ID)).thenReturn(true);
+
+			assertThatThrownBy(() -> voteService.registerVote(AGENDA_ID, MEMBER_ID, ABLE_CPF, VoteOption.YES))
+					.isInstanceOf(DuplicateVoteException.class);
+			verify(voteRepository, never()).save(any());
+		}
+
+		@Test
+		@DisplayName("should throw DuplicateVoteException when the CPF already voted under a different member id (RN01)")
+		void shouldThrowWhenCpfAlreadyVotedUnderADifferentMemberId() {
+			when(agendaRepository.findById(AGENDA_ID)).thenReturn(Optional.of(new Agenda(AGENDA_ID, "Reforma do estatuto", null)));
+			when(cpfValidationClient.checkVotingAbility(ABLE_CPF)).thenReturn(new VotingAbilityResponse(VotingAbilityStatus.ABLE_TO_VOTE));
+			when(votingSessionService.isSessionOpen(AGENDA_ID)).thenReturn(true);
+			when(voteRepository.existsByAgendaIdAndMemberId(AGENDA_ID, MEMBER_ID)).thenReturn(false);
+			when(voteRepository.existsByAgendaIdAndCpf(AGENDA_ID, ABLE_CPF)).thenReturn(true);
 
 			assertThatThrownBy(() -> voteService.registerVote(AGENDA_ID, MEMBER_ID, ABLE_CPF, VoteOption.YES))
 					.isInstanceOf(DuplicateVoteException.class);

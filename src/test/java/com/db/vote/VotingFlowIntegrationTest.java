@@ -75,6 +75,17 @@ class VotingFlowIntegrationTest {
 	}
 
 	@Test
+	void shouldRejectAVoteWhenTheCpfAlreadyVotedUnderADifferentMemberId() throws Exception {
+		Long agendaId = createAgenda("Eleição de diretoria", "Chapa única");
+		openSession(agendaId, 1);
+
+		voteAndExpect(agendaId, 1L, ABLE_CPF_1, VoteOption.YES, status().isCreated());
+
+		// RN01 extended: same CPF, different member_id on the same agenda -> rejected.
+		voteAndExpect(agendaId, 2L, ABLE_CPF_1, VoteOption.NO, status().isConflict());
+	}
+
+	@Test
 	void shouldRejectInvalidOrIneligibleCpfBeforeRegisteringTheVote() throws Exception {
 		Long agendaId = createAgenda("Prestação de contas", "Aprovação das contas do exercício anterior");
 		openSession(agendaId, 1);

@@ -45,16 +45,22 @@ public class VoteService {
 		if (voteRepository.existsByAgendaIdAndMemberId(agendaId, memberId)) {
 			throw new DuplicateVoteException("Member " + memberId + " already voted on agenda " + agendaId);
 		}
+		// RN01 extended: a CPF already used on this agenda cannot vote again
+		// under a different member_id, and vice-versa (checked above).
+		if (voteRepository.existsByAgendaIdAndCpf(agendaId, cpf)) {
+			throw new DuplicateVoteException("CPF " + cpf + " already voted on agenda " + agendaId);
+		}
 
-		Vote vote = new Vote(null, agendaId, memberId, voteAnswer, LocalDateTime.now());
+		Vote vote = new Vote(null, agendaId, memberId, cpf, voteAnswer, LocalDateTime.now());
 		try {
 			Vote savedVote = voteRepository.save(vote);
 			log.info("Vote registered: agendaId={}, memberId={}, answer={}", agendaId, memberId, voteAnswer);
 			return savedVote;
 		} catch (DataIntegrityViolationException exception) {
-			// RN01's real guarantee: the existsBy check above is a fast path only and
-			// cannot prevent a race between two concurrent votes from the same member.
-			throw new DuplicateVoteException("Member " + memberId + " already voted on agenda " + agendaId);
+			// RN01's real guarantee: the existsBy checks above are a fast path only
+			// and cannot prevent a race between two concurrent votes from the same
+			// member or CPF.
+			throw new DuplicateVoteException("Member " + memberId + " or CPF " + cpf + " already voted on agenda " + agendaId);
 		}
 	}
 }

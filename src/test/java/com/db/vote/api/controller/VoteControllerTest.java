@@ -47,7 +47,7 @@ class VoteControllerTest {
 	@Test
 	void shouldReturn201WhenVoteIsRegistered() throws Exception {
 		var request = new RegisterVoteRequest(42L, "11111111110", VoteOption.YES);
-		var vote = new Vote(1L, 1L, 42L, VoteOption.YES, LocalDateTime.now());
+		var vote = new Vote(1L, 1L, 42L, "11111111110", VoteOption.YES, LocalDateTime.now());
 		when(voteService.registerVote(eq(1L), eq(42L), eq("11111111110"), eq(VoteOption.YES))).thenReturn(vote);
 
 		mockMvc.perform(post("/api/v1/agendas/1/votes")
