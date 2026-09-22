@@ -1,87 +1,26 @@
-# Welcome to React Router!
+# Front-end — Votação Cooperativa
 
-A modern, production-ready template for building full-stack React applications using React Router.
-
-[![Open in StackBlitz](https://developer.stackblitz.com/img/open_in_stackblitz.svg)](https://stackblitz.com/github/remix-run/react-router-templates/tree/main/default)
-
-## Features
-
-- 🚀 Server-side rendering
-- ⚡️ Hot Module Replacement (HMR)
-- 📦 Asset bundling and optimization
-- 🔄 Data loading and mutations
-- 🔒 TypeScript by default
-- 🎉 TailwindCSS for styling
-- 📖 [React Router docs](https://reactrouter.com/)
-
-## Getting Started
-
-### Installation
-
-Install the dependencies:
+React 19 + React Router (framework mode, `ssr: false` → SPA) + Tailwind CSS v4.
 
 ```bash
 npm install
+npm run dev         # http://localhost:5173 (proxy /api -> http://localhost:8080; sobrescreva com API_URL)
+npm run typecheck
+npm run build       # gera build/client (estático)
 ```
 
-### Development
+Em Docker, o `Dockerfile` gera o bundle e o serve com nginx (`nginx.conf`), que também faz proxy de `/api` para o serviço `api` do compose — o browser fala com uma única origem, sem CORS.
 
-Start the development server with HMR:
-
-```bash
-npm run dev
-```
-
-Your application will be available at `http://localhost:5173`.
-
-## Building for Production
-
-Create a production build:
-
-```bash
-npm run build
-```
-
-## Deployment
-
-### Docker Deployment
-
-To build and run using Docker:
-
-```bash
-docker build -t my-app .
-
-# Run the container
-docker run -p 3000:3000 my-app
-```
-
-The containerized application can be deployed to any platform that supports Docker, including:
-
-- AWS ECS
-- Google Cloud Run
-- Azure Container Apps
-- Digital Ocean App Platform
-- Fly.io
-- Railway
-
-### DIY Deployment
-
-If you're familiar with deploying Node applications, the built-in app server is production-ready.
-
-Make sure to deploy the output of `npm run build`
+## Estrutura
 
 ```
-├── package.json
-├── package-lock.json (or pnpm-lock.yaml, or bun.lockb)
-├── build/
-│   ├── client/    # Static assets
-│   └── server/    # Server-side code
+app/
+├── root.tsx              # layout (header/footer), fallback e error boundary
+├── routes.ts             # /  ·  /pautas/nova  ·  /pautas/:agendaId
+├── routes/               # telas: lista, nova pauta, detalhe (abrir sessão, votar, resultado)
+├── components/           # UI reutilizável (Hero, AgendaCard, StatusBadge, ResultPanel, Field, Button…)
+├── hooks/useCountdown.ts # contagem regressiva a partir de secondsRemaining do servidor
+└── lib/                  # api.ts (client REST + tipos) · agenda.ts (regras de exibição)
 ```
 
-## Styling
-
-This template comes with [Tailwind CSS](https://tailwindcss.com/) already configured for a simple default starting experience. You can use whatever CSS framework you prefer.
-
----
-
-Built with ❤️ using React Router.
+Dados são carregados com `clientLoader` e mutações feitas com `<Form>` + `clientAction`; o React Router revalida a tela automaticamente após cada ação.

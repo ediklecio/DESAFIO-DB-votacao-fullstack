@@ -38,6 +38,7 @@ mais abaixo).
 4. Aguarde a linha de log do Spring Boot indicando que a aplicação subiu
    (porta `8080`, mapeada em `docker-compose.yml:28-29`).
 5. Acesse:
+   - Front-end: http://localhost:3000 (serviço `web`; porta configurável via `WEB_PORT` no `.env`)
    - Swagger UI: http://localhost:8080/swagger-ui.html
    - OpenAPI JSON: http://localhost:8080/v3/api-docs
    - API: http://localhost:8080/api/v1/agendas

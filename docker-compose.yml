@@ -34,6 +34,16 @@ services:
     networks:
       - vote-network
 
+  web:
+    build: ./frontend
+    container_name: vote-web
+    ports:
+      - "${WEB_PORT:-3000}:80"
+    depends_on:
+      - api
+    networks:
+      - vote-network
+
 networks:
   vote-network:
     driver: bridge
