@@ -1,8 +1,12 @@
 package com.db.vote.api.controller;
 
 import com.db.vote.api.dto.request.CreateAgendaRequest;
+import com.db.vote.api.dto.response.AgendaOverviewResponse;
 import com.db.vote.domain.Agenda;
+import com.db.vote.domain.SessionStatus;
+import com.db.vote.domain.exception.AgendaNotFoundException;
 import com.db.vote.domain.exception.InvalidAgendaException;
+import com.db.vote.service.AgendaQueryService;
 import com.db.vote.service.AgendaService;
 import tools.jackson.databind.ObjectMapper;
 import org.junit.jupiter.api.Test;
@@ -14,6 +18,7 @@ import org.springframework.test.web.servlet.MockMvc;
 
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.when;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.header;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
@@ -30,6 +35,9 @@ class AgendaControllerTest {
 
 	@MockitoBean
 	private AgendaService agendaService;
+
+	@MockitoBean
+	private AgendaQueryService agendaQueryService;
 
 	@Test
 	void shouldReturn201WithLocationAndBodyWhenAgendaIsCreated() throws Exception {
@@ -58,5 +66,27 @@ class AgendaControllerTest {
 						.content(objectMapper.writeValueAsString(request)))
 				.andExpect(status().isUnprocessableEntity())
 				.andExpect(jsonPath("$.message").value("Agenda title must not be blank"));
+	}
+
+	@Test
+	void shouldReturn200WithTheAgendaOverview() throws Exception {
+		var overview = new AgendaOverviewResponse(1L, "Reforma do estatuto", "desc",
+				SessionStatus.NOT_STARTED, null, null, 0, 0, 0);
+		when(agendaQueryService.getAgenda(1L)).thenReturn(overview);
+
+		mockMvc.perform(get("/api/v1/agendas/{id}", 1L))
+				.andExpect(status().isOk())
+				.andExpect(jsonPath("$.id").value(1))
+				.andExpect(jsonPath("$.sessionStatus").value("NOT_STARTED"))
+				.andExpect(jsonPath("$.totalYes").value(0));
+	}
+
+	@Test
+	void shouldReturn404WhenTheAgendaDoesNotExist() throws Exception {
+		when(agendaQueryService.getAgenda(99L)).thenThrow(new AgendaNotFoundException("Agenda 99 not found"));
+
+		mockMvc.perform(get("/api/v1/agendas/{id}", 99L))
+				.andExpect(status().isNotFound())
+				.andExpect(jsonPath("$.message").value("Agenda 99 not found"));
 	}
 }

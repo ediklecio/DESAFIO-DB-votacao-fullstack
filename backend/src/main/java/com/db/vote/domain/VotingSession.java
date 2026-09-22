@@ -54,4 +54,8 @@ public class VotingSession {
 	public boolean isOpen(LocalDateTime now) {
 		return !now.isBefore(openedAt) && now.isBefore(getClosesAt());
 	}
+
+	public SessionStatus statusAt(LocalDateTime now) {
+		return isOpen(now) ? SessionStatus.OPEN : SessionStatus.CLOSED;
+	}
 }

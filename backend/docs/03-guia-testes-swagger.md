@@ -48,6 +48,29 @@ nome técnico da classe:
 | `POST` | `/api/v1/agendas/{agendaId}/sessions` | Abre a sessão de votação da pauta | `201 Created` |
 | `POST` | `/api/v1/agendas/{agendaId}/votes` | Registra o voto de um associado | `201 Created` |
 | `GET` | `/api/v1/agendas/{agendaId}/results` | Apura e retorna o resultado da votação | `200 OK` |
+| `GET` | `/api/v1/agendas?page=0&size=20` | Lista pautas (mais recentes primeiro) com status da sessão e contagem de votos | `200 OK` |
+| `GET` | `/api/v1/agendas/{agendaId}` | Detalha uma pauta com status da sessão, segundos restantes e contagem de votos | `200 OK` |
+
+Os dois `GET` de leitura existem para alimentar o front-end. Exemplo de item
+(`sessionStatus` ∈ `NOT_STARTED` · `OPEN` · `CLOSED`, derivado do relógio do
+servidor — RN05; `secondsRemaining` só é maior que zero com a sessão aberta):
+
+```json
+{
+  "id": 1,
+  "title": "Reforma do estatuto",
+  "description": "Votação sobre a nova redação do estatuto social",
+  "sessionStatus": "OPEN",
+  "openedAt": "2026-09-22T18:00:00",
+  "closesAt": "2026-09-22T18:05:00",
+  "secondsRemaining": 240,
+  "totalYes": 3,
+  "totalNo": 1
+}
+```
+
+A listagem responde `{ "content": [...], "page", "size", "totalElements", "totalPages" }`.
+Sessões e contagens de votos são carregadas em lote (2 queries por página, sem N+1).
 
 ## 3. Fluxo completo (happy path)
 

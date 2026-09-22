@@ -75,6 +75,40 @@ class VotingFlowIntegrationTest {
 	}
 
 	@Test
+	void shouldExposeSessionStatusAndTallyThroughTheReadEndpoints() throws Exception {
+		Long agendaId = createAgenda("Aprovação das contas", "Balanço do exercício");
+
+		mockMvc.perform(get("/api/v1/agendas/{id}", agendaId))
+				.andExpect(status().isOk())
+				.andExpect(jsonPath("$.title").value("Aprovação das contas"))
+				.andExpect(jsonPath("$.sessionStatus").value("NOT_STARTED"))
+				.andExpect(jsonPath("$.openedAt").isEmpty());
+
+		openSession(agendaId, 5);
+		voteAndExpect(agendaId, 1L, ABLE_CPF_1, VoteOption.YES, status().isCreated());
+		voteAndExpect(agendaId, 2L, ABLE_CPF_2, VoteOption.NO, status().isCreated());
+
+		mockMvc.perform(get("/api/v1/agendas/{id}", agendaId))
+				.andExpect(status().isOk())
+				.andExpect(jsonPath("$.sessionStatus").value("OPEN"))
+				.andExpect(jsonPath("$.secondsRemaining").isNumber())
+				.andExpect(jsonPath("$.totalYes").value(1))
+				.andExpect(jsonPath("$.totalNo").value(1));
+
+		// Newest first: the agenda just created is the first item of page 0.
+		mockMvc.perform(get("/api/v1/agendas").param("size", "5"))
+				.andExpect(status().isOk())
+				.andExpect(jsonPath("$.page").value(0))
+				.andExpect(jsonPath("$.size").value(5))
+				.andExpect(jsonPath("$.content[0].id").value(agendaId))
+				.andExpect(jsonPath("$.content[0].sessionStatus").value("OPEN"))
+				.andExpect(jsonPath("$.content[0].totalYes").value(1));
+
+		mockMvc.perform(get("/api/v1/agendas/{id}", 999_999L))
+				.andExpect(status().isNotFound());
+	}
+
+	@Test
 	void shouldRejectAVoteWhenTheCpfAlreadyVotedUnderADifferentMemberId() throws Exception {
 		Long agendaId = createAgenda("Eleição de diretoria", "Chapa única");
 		openSession(agendaId, 1);

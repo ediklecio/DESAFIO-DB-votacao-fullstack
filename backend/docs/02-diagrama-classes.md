@@ -23,6 +23,7 @@ classDiagram
         -Integer durationMinutes
         -LocalDateTime closesAt
         +boolean isOpen(LocalDateTime now)
+        +SessionStatus statusAt(LocalDateTime now)
     }
 
     class Vote {
@@ -67,18 +68,27 @@ classDiagram
     class VotingSessionRepository {
         <<interface>>
         +findByAgendaId(Long agendaId) Optional~VotingSession~
+        +findByAgendaIdIn(Collection~Long~ agendaIds) List~VotingSession~
     }
     class VoteRepository {
         <<interface>>
         +existsByAgendaIdAndMemberId(Long agendaId, Long memberId) boolean
         +existsByAgendaIdAndCpf(Long agendaId, String cpf) boolean
         +countByAgendaIdAndVoteAnswer(Long agendaId, VoteOption option) long
+        +countGroupedByAgendaIdAndVoteAnswer(Collection~Long~ agendaIds) List~VoteCount~
     }
 
     %% ---- service ----
     class AgendaService {
         -AgendaRepository agendaRepository
         +createAgenda(CreateAgendaRequest request) Agenda
+    }
+    class AgendaQueryService {
+        -AgendaRepository agendaRepository
+        -VotingSessionRepository votingSessionRepository
+        -VoteRepository voteRepository
+        +listAgendas(Pageable pageable) Page~AgendaOverviewResponse~
+        +getAgenda(Long agendaId) AgendaOverviewResponse
     }
     class VotingSessionService {
         -VotingSessionRepository sessionRepository
@@ -118,6 +128,8 @@ classDiagram
     %% ---- api: controllers ----
     class AgendaController {
         +create(CreateAgendaRequest) ResponseEntity~AgendaResponse~
+        +list(Pageable) ResponseEntity~PageResponse~AgendaOverviewResponse~~
+        +get(Long agendaId) ResponseEntity~AgendaOverviewResponse~
     }
     class VotingSessionController {
         +open(Long agendaId, OpenVotingSessionRequest) ResponseEntity~VotingSessionResponse~
@@ -139,6 +151,10 @@ classDiagram
     %% relações
     AgendaController --> AgendaService
     AgendaService --> AgendaRepository
+    AgendaController --> AgendaQueryService
+    AgendaQueryService --> AgendaRepository
+    AgendaQueryService --> VotingSessionRepository
+    AgendaQueryService --> VoteRepository
 
     VotingSessionController --> VotingSessionService
     VotingSessionService --> VotingSessionRepository
