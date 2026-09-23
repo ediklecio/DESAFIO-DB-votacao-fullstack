@@ -1,8 +1,9 @@
 # Build the SPA bundle (React Router in SPA mode -> static files in build/client).
 FROM node:24-alpine AS build
 WORKDIR /app
-COPY package.json package-lock.json ./
-RUN npm ci
+# package-lock.json is not versioned, so resolve dependencies from package.json.
+COPY package*.json ./
+RUN npm install --no-audit --no-fund
 COPY . .
 RUN npm run build
 
