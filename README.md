@@ -1,86 +1,59 @@
-# Votação
+# Sistema de Votação Cooperativista
 
-## Objetivo
+Solução full stack para gerenciar pautas e sessões de votação em assembleias de cooperativa: cadastro de pauta, abertura de sessão de votação com duração configurável, registro de voto (Sim/Não) por associado e apuração do resultado.
 
-No cooperativismo, cada associado possui um voto e as decisões são tomadas em assembleias, por votação. Imagine que você deve criar uma solução we para gerenciar e participar dessas sessões de votação.
-Essa solução deve ser executada na nuvem e promover as seguintes funcionalidades através de uma API REST / Front:
+- **Backend** (`backend/`): API REST em Java 25 / Spring Boot 4, PostgreSQL + Flyway.
+- **Front-end** (`frontend/`): React 19 + React Router (modo SPA) + Tailwind, servido por nginx.
 
-- Cadastrar uma nova pauta
-- Abrir uma sessão de votação em uma pauta (a sessão de votação deve ficar aberta por
-  um tempo determinado na chamada de abertura ou 1 minuto por default)
-- Receber votos dos associados em pautas (os votos são apenas 'Sim'/'Não'. Cada associado
-  é identificado por um id único e pode votar apenas uma vez por pauta)
-- Contabilizar os votos e dar o resultado da votação na pauta
+## Início rápido (Docker)
 
-Para fins de exercício, a segurança das interfaces pode ser abstraída e qualquer chamada para as interfaces pode ser considerada como autorizada. A solução deve ser construída em java com Spring-boot e Angular/React conforme orientação, mas os frameworks e bibliotecas são de livre escolha (desde que não infrinja direitos de uso).
+Pré-requisitos: Docker e Docker Compose instalados.
 
-É importante que as pautas e os votos sejam persistidos e que não sejam perdidos com o restart da aplicação.
-
-## Como proceder
-
-Por favor, realize o FORK desse repositório e implemente sua solução no FORK em seu repositório GItHub, ao final, notifique da conclusão para que possamos analisar o código implementado.
-
-Lembre de deixar todas as orientações necessárias para executar o seu código.
-
-### Tarefas bônus
-
-- Tarefa Bônus 1 - Integração com sistemas externos
-  - Criar uma Facade/Client Fake que retorna aleátoriamente se um CPF recebido é válido ou não.
-  - Caso o CPF seja inválido, a API retornará o HTTP Status 404 (Not found). Você pode usar geradores de CPF para gerar CPFs válidos
-  - Caso o CPF seja válido, a API retornará se o usuário pode (ABLE_TO_VOTE) ou não pode (UNABLE_TO_VOTE) executar a operação. Essa operação retorna resultados aleatórios, portanto um mesmo CPF pode funcionar em um teste e não funcionar no outro.
-
-```
-// CPF Ok para votar
-{
-    "status": "ABLE_TO_VOTE
-}
-// CPF Nao Ok para votar - retornar 404 no client tb
-{
-    "status": "UNABLE_TO_VOTE
-}
+```bash
+cp .env.example .env      # defina DB_PASSWORD; não altere DB_HOST
+docker compose up --build
 ```
 
-Exemplos de retorno do serviço
+| Serviço | URL |
+|---|---|
+| Front-end | http://localhost:3000 |
+| API | http://localhost:8080/api/v1/agendas |
+| Swagger UI | http://localhost:8080/swagger-ui.html |
 
-### Tarefa Bônus 2 - Performance
+Para usar outra porta no front, defina `WEB_PORT` no `.env` (ex.: `WEB_PORT=8081`).
 
-- Imagine que sua aplicação possa ser usada em cenários que existam centenas de
-  milhares de votos. Ela deve se comportar de maneira performática nesses
-  cenários
-- Testes de performance são uma boa maneira de garantir e observar como sua
-  aplicação se comporta
+## Usando o front-end
 
-### Tarefa Bônus 3 - Versionamento da API
+1. **Nova pauta** — no menu ou no botão "Nova pauta", informe título (obrigatório) e descrição. Ao salvar, você cai na página da pauta.
+2. **Abrir sessão** — na pauta com status *Aguardando sessão*, informe a duração em minutos (vazio = 1 minuto) e clique em **Abrir sessão**.
+3. **Votar** — com a sessão *Em votação*, informe o ID do associado e o CPF (11 dígitos, só números) e clique em **Sim** ou **Não**.
+   - Ambiente de teste: o validador fake aceita CPFs terminados em dígito **par** (ex.: `12345678902`); final ímpar é recusado como "não apto".
+   - Cada associado (e cada CPF) vota uma única vez por pauta.
+4. **Resultado** — o painel "Resultado" mostra a contagem **Parcial** durante a sessão (atualiza a cada 10 s) e **Final** após o encerramento. A lista **Resultados** (menu) filtra as pautas encerradas: *Aprovada* (mais Sim), *Rejeitada* (mais Não) ou *Empate*.
 
-○ Como você versionaria a API da sua aplicação? Que estratégia usar?
+A tela inicial lista as pautas com filtros por status e contagem regressiva das sessões abertas.
 
-## O que será analisado
+### Rodando o front-end localmente (desenvolvimento)
 
-- Simplicidade no design da solução (evitar over engineering)
-- Organização do código
-- Arquitetura do projeto
-- Boas práticas de programação (manutenibilidade, legibilidade etc)
-- Possíveis bugs
-- Tratamento de erros e exceções
-- Explicação breve do porquê das escolhas tomadas durante o desenvolvimento da solução
-- Uso de testes automatizados e ferramentas de qualidade
-- Limpeza do código
-- Documentação do código e da API
-- Logs da aplicação
-- Mensagens e organização dos commits
-- Testes
-- Layout responsivo
+Com a API no ar em `localhost:8080` (via Docker ou IDE):
 
-## Dicas
+```bash
+cd frontend
+npm install
+npm run dev               # http://localhost:5173 — /api é redirecionado para localhost:8080
+```
 
-- Teste bem sua solução, evite bugs
+Se a API estiver em outro endereço: `API_URL=http://host:porta npm run dev`.
 
-  Observações importantes
-- Não inicie o teste sem sanar todas as dúvidas
-- Iremos executar a aplicação para testá-la, cuide com qualquer dependência externa e
-  deixe claro caso haja instruções especiais para execução do mesmo
-  Classificação da informação: Uso Interno
+## Documentação
 
+A documentação do backend — requisitos, arquitetura, guias de execução e de teste — está em [`backend/docs`](backend/docs).
 
-
-# desafio-votacao
+| Documento | Descrição |
+|---|---|
+| [`DESAFIO.md`](backend/docs/DESAFIO.md) | Enunciado original do desafio: requisitos, tarefas bônus e critérios de avaliação |
+| [`01-documento-requisitos.md`](backend/docs/01-documento-requisitos.md) | Requisitos funcionais, regras de negócio e requisitos não funcionais (RF/RN/RNF) |
+| [`02-diagrama-classes.md`](backend/docs/02-diagrama-classes.md) | Diagrama de classes e organização em camadas (`api` / `domain` / `repository` / `service` / `infra`) |
+| [`03-guia-testes-swagger.md`](backend/docs/03-guia-testes-swagger.md) | Passo a passo para testar a API pelo Swagger UI, incluindo cenários de erro |
+| [`INICIALIZACAO.md`](backend/docs/INICIALIZACAO.md) | Guia de inicialização: Docker Compose, ambiente híbrido (dev local) e testes automatizados |
+| [`DESIGN_PATTERN.md`](docs/DESIGN_PATTERN.md) | Referência visual (paleta, tipografia) usada no front-end |

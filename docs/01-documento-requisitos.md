@@ -2,7 +2,7 @@
 
 **Projeto:** desafio-votacao-fullstack
 **Status:** MVP em desenvolvimento
-**Referência:** `README.md` (enunciado original)
+**Referência:** `docs/DESAFIO.md` (enunciado original)
 
 ## 1. Objetivo e contexto
 
@@ -57,7 +57,7 @@ Por decisão de simplicidade (evitar over engineering, conforme os próprios cri
 
 | ID | Regra |
 |---|---|
-| RN01 | Um associado vota no máximo uma vez por pauta — unicidade garantida por constraint `UNIQUE` no banco (`pauta_id` + `associado_id`), não apenas em memória |
+| RN01 | Um associado vota no máximo uma vez por pauta — unicidade garantida por constraint `UNIQUE` no banco (`pauta_id` + `associado_id`), não apenas em memória. O `cpf` recebido no voto também é único por pauta (`pauta_id` + `cpf`, `UNIQUE` separada): um associado não pode votar de novo trocando de id com o mesmo CPF, nem um CPF já usado pode votar de novo sob um id diferente |
 | RN02 | Um voto só é aceito enquanto a sessão da pauta estiver aberta, isto é, dentro da janela `[abertura, abertura + duração)` |
 | RN03 | Se a duração da sessão não for informada na abertura, o padrão é 1 minuto |
 | RN04 | Uma pauta sem sessão aberta (ainda não iniciada ou já encerrada) não aceita novos votos |
@@ -85,9 +85,9 @@ Por decisão de simplicidade (evitar over engineering, conforme os próprios cri
 
 - **Pauta**: identificador, título/descrição
 - **SessaoVotacao**: identificador, referência à pauta, data/hora de abertura, duração (ou data/hora de encerramento calculada)
-- **Voto**: identificador, referência à pauta, id do associado, opção (`SIM`/`NAO`), data/hora do registro — constraint `UNIQUE` composta (pauta + associado)
+- **Voto**: identificador, referência à pauta, id do associado, CPF do associado, opção (`SIM`/`NAO`), data/hora do registro — duas constraints `UNIQUE` compostas: (pauta + associado) e (pauta + CPF)
 
-Status atual da implementação: a entidade `Vote` e o enum `VoteOption` já existem, com constraint de unicidade `agenda_id + member_id` e `VoteService`/`VoteRepository` básicos. As entidades `Pauta` e `SessaoVotacao` (RF01 e RF02) ainda não foram criadas — é o próximo passo da Fase 1 do plano de execução.
+Status atual da implementação: o fluxo núcleo (RF01–RF05) está completo — `Agenda`, `VotingSession`, `Vote`/`VoteOption` e os respectivos controllers, services e repositórios. `Vote` carrega `memberId` e `cpf`, ambos únicos por pauta (RN01, ver `docs/02-diagrama-classes.md`), com a segunda constraint adicionada pela migração `V4__add_cpf_unique_to_votes.sql`.
 
 ## 8. Critérios de aceite
 

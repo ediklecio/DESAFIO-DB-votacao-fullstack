@@ -23,12 +23,14 @@ classDiagram
         -Integer durationMinutes
         -LocalDateTime closesAt
         +boolean isOpen(LocalDateTime now)
+        +SessionStatus statusAt(LocalDateTime now)
     }
 
     class Vote {
         -Long id
         -Long agendaId
         -Long memberId
+        -String cpf
         -VoteOption voteAnswer
         -LocalDateTime registeredAt
     }
@@ -44,7 +46,7 @@ classDiagram
     Vote "1" --> "1" VoteOption : voteAnswer
 ```
 
-Restrição de negócio (RN01): `Vote` tem constraint `UNIQUE` composta em `(agendaId, memberId)` no banco — é o que garante um voto por associado por agenda (pauta), não apenas uma checagem em memória. O associado (`memberId`) não é modelado como entidade própria: por decisão de escopo (RN08 do documento de requisitos), o id do associado é apenas recebido pela API, sem cadastro/gestão de associados neste projeto.
+Restrição de negócio (RN01): `Vote` tem **duas** constraints `UNIQUE` no banco — `(agendaId, memberId)` e `(agendaId, cpf)` (migração `V4__add_cpf_unique_to_votes.sql`) — não apenas uma checagem em memória. As duas juntas garantem que nem o `memberId` nem o `cpf` possam ser reutilizados com um contraparte diferente na mesma pauta: um associado que já votou não pode votar de novo com outro `memberId` passando o mesmo `cpf`, e um `cpf` que já votou não pode votar de novo sob um `memberId` diferente. O associado (`memberId`) não é modelado como entidade própria: por decisão de escopo (RN08 do documento de requisitos), o id do associado é apenas recebido pela API, sem cadastro/gestão de associados neste projeto.
 
 ## 2. Classes por camada (api · domain · repository · service · infra)
 
@@ -66,17 +68,27 @@ classDiagram
     class VotingSessionRepository {
         <<interface>>
         +findByAgendaId(Long agendaId) Optional~VotingSession~
+        +findByAgendaIdIn(Collection~Long~ agendaIds) List~VotingSession~
     }
     class VoteRepository {
         <<interface>>
         +existsByAgendaIdAndMemberId(Long agendaId, Long memberId) boolean
+        +existsByAgendaIdAndCpf(Long agendaId, String cpf) boolean
         +countByAgendaIdAndVoteAnswer(Long agendaId, VoteOption option) long
+        +countGroupedByAgendaIdAndVoteAnswer(Collection~Long~ agendaIds) List~VoteCount~
     }
 
     %% ---- service ----
     class AgendaService {
         -AgendaRepository agendaRepository
         +createAgenda(CreateAgendaRequest request) Agenda
+    }
+    class AgendaQueryService {
+        -AgendaRepository agendaRepository
+        -VotingSessionRepository votingSessionRepository
+        -VoteRepository voteRepository
+        +listAgendas(Pageable pageable) Page~AgendaOverviewResponse~
+        +getAgenda(Long agendaId) AgendaOverviewResponse
     }
     class VotingSessionService {
         -VotingSessionRepository sessionRepository
@@ -116,6 +128,8 @@ classDiagram
     %% ---- api: controllers ----
     class AgendaController {
         +create(CreateAgendaRequest) ResponseEntity~AgendaResponse~
+        +list(Pageable) ResponseEntity~PageResponse~AgendaOverviewResponse~~
+        +get(Long agendaId) ResponseEntity~AgendaOverviewResponse~
     }
     class VotingSessionController {
         +open(Long agendaId, OpenVotingSessionRequest) ResponseEntity~VotingSessionResponse~
@@ -137,6 +151,10 @@ classDiagram
     %% relações
     AgendaController --> AgendaService
     AgendaService --> AgendaRepository
+    AgendaController --> AgendaQueryService
+    AgendaQueryService --> AgendaRepository
+    AgendaQueryService --> VotingSessionRepository
+    AgendaQueryService --> VoteRepository
 
     VotingSessionController --> VotingSessionService
     VotingSessionService --> VotingSessionRepository

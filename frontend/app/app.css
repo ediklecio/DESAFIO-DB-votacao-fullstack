@@ -1,0 +1,28 @@
+@import "tailwindcss";
+
+@theme {
+  --font-sans: "Asap", "Segoe UI", Roboto, sans-serif;
+
+  --color-brand-dark: #003641;
+  --color-brand: #00ae9d;
+  --color-brand-600: #00a091;
+  --color-brand-700: #00645b;
+  --color-brand-soft: #e0f5f2;
+  --color-accent: #7db61c;
+
+  --color-ink: #52535c;
+  --color-muted: #5f6f73;
+  --color-line: #c9d3d5;
+  --color-line-soft: #eceff0;
+  --color-chip: #f0f2f3;
+
+  --color-success-soft: #eef6df;
+  --color-success: #3f6508;
+  --color-danger-soft: #fbe9e7;
+  --color-danger: #a42a20;
+}
+
+html,
+body {
+  @apply bg-white font-sans text-ink antialiased;
+}
